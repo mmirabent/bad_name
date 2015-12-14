@@ -3,6 +3,9 @@ import xml.etree.ElementTree as ET
 import re
 import json
 
+################################################################################
+# Load the settings from file                                                  #
+################################################################################
 
 f = open('settings.json','r')
 params = json.load(f)
@@ -14,10 +17,8 @@ JSS_API = '/JSSResource'
 GOOD_NAME_REGEX = params['GOOD_NAME_REGEX']
 
 ################################################################################
-# Do not edit below this line                                                  #
+# Check all the names                                                          #
 ################################################################################
-
-good_name = re.compile(GOOD_NAME_REGEX)
 
 mobile_devices_uri = JSS + JSS_API + '/mobiledevices'
 auth_tuple = (USERNAME,PASSWORD)
@@ -25,9 +26,18 @@ auth_tuple = (USERNAME,PASSWORD)
 # Pull a list of ALL the mobile devices
 r = requests.get(mobile_devices_uri, auth=auth_tuple, verify=False)
 
+if r.status_code != 200:
+    print("There was an problem getting the list of mobile devices")
+    print("Status code: %d" % r.status_code)
+    print(r.text)
+    exit(1)
+
 # This gets the content as raw bytes, before it's encoded (otherwise, etree
 # will try to encode it again) and parses it into an ElementTree
 root = ET.fromstring(r.content) 
+
+# Compile the good_name regex
+good_name = re.compile(GOOD_NAME_REGEX)
 
 # findall makes an array of the mobile devices so we can iterate over them all
 for mobile_device in root.findall('mobile_device'):
@@ -39,9 +49,10 @@ for mobile_device in root.findall('mobile_device'):
     if good_name.match(name):
         root.remove(mobile_device)
 
-# At this point, root is the root of an element tree with all the bad names in it, so now we update the bad_names group
+# Set bad_names to root for clarity further down in the script
+bad_names = root
 
-mobile_device_groups_uri = 'https://mdm.pacehs.com:8443/JSSResource/mobiledevicegroups'
+mobile_device_groups_uri = JSS + JSS_API + '/mobiledevicegroups'
 
 # Get a list of all the mobile device groups
 r = requests.get(mobile_device_groups_uri, auth=auth_tuple, verify=False)
