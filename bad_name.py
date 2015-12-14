@@ -17,6 +17,17 @@ JSS_API = '/JSSResource'
 GOOD_NAME_REGEX = params['GOOD_NAME_REGEX']
 
 ################################################################################
+# Functions definitions                                                        #
+################################################################################
+
+def assert_response(response, status, msg=""):
+    if response.status_code != status:
+        print "There was a problem " + msg
+        print "Status code: %d" % response.status_code
+        print response.text
+        exit(1)
+
+################################################################################
 # Check all the names                                                          #
 ################################################################################
 
@@ -26,11 +37,7 @@ auth_tuple = (USERNAME,PASSWORD)
 # Pull a list of ALL the mobile devices
 r = requests.get(mobile_devices_uri, auth=auth_tuple, verify=False)
 
-if r.status_code != 200:
-    print("There was an problem getting the list of mobile devices")
-    print("Status code: %d" % r.status_code)
-    print(r.text)
-    exit(1)
+assert_response(r,200, "getting the list of mobile devices")
 
 # This gets the content as raw bytes, before it's encoded (otherwise, etree
 # will try to encode it again) and parses it into an ElementTree
@@ -57,7 +64,7 @@ mobile_device_groups_uri = JSS + JSS_API + '/mobiledevicegroups'
 # Get a list of all the mobile device groups
 r = requests.get(mobile_device_groups_uri, auth=auth_tuple, verify=False)
 
-# TODO: Check for a good response
+assert_response(r,200,"getting list of mobile devide groups")
 
 # parse the xml
 groups = ET.fromstring(r.content)
@@ -77,6 +84,7 @@ bad_names_group_uri = mobile_device_groups_uri + "/id/" + bad_name_group.find('i
 
 # Pull the 'bad names' group object itself
 r = requests.get(bad_names_group_uri, auth=auth_tuple, verify=False)
+assert_response(r,200,"getting the \"bad names\" mobile devide group")
 
 # Parse the xml for the 'bad names' group
 bad_name_group = ET.fromstring(r.content)
@@ -96,6 +104,6 @@ xml = ET.tostring(bad_name_group)
 
 # Update the 'bad names' group
 r = requests.put(bad_names_group_uri, data=xml, auth=auth_tuple, verify=False)
+assert_response(r,201,"updating the \"bad names\" mobile devide group")
 
-# print r.status_code
 # print r.text
