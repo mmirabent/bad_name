@@ -1,13 +1,26 @@
 import requests
 import xml.etree.ElementTree as ET
 import re
+import json
 
-JSS
 
-good_name = re.compile(r"[a-zA-Z]+[0-9]{5}")
+f = open('settings.json','r')
+params = json.load(f)
 
-mobile_devices_uri = 'https://mdm.pacehs.com:8443/JSSResource/mobiledevices'
-auth_tuple = 
+JSS = params['JSS']
+USERNAME = params['USERNAME']
+PASSWORD = params['PASSWORD']
+JSS_API = '/JSSResource'
+GOOD_NAME_REGEX = params['GOOD_NAME_REGEX']
+
+################################################################################
+# Do not edit below this line                                                  #
+################################################################################
+
+good_name = re.compile(GOOD_NAME_REGEX)
+
+mobile_devices_uri = JSS + JSS_API + '/mobiledevices'
+auth_tuple = (USERNAME,PASSWORD)
 
 # Pull a list of ALL the mobile devices
 r = requests.get(mobile_devices_uri, auth=auth_tuple, verify=False)
