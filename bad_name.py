@@ -22,9 +22,9 @@ GOOD_NAME_REGEX = params['GOOD_NAME_REGEX']
 
 def assert_response(response, status, msg=""):
     if response.status_code != status:
-        print "There was a problem " + msg
-        print "Status code: %d" % response.status_code
-        print response.text
+        print("There was a problem " + msg)
+        print("Status code: %d" % response.status_code)
+        print(response.text)
         exit(1)
 
 ################################################################################
@@ -71,13 +71,30 @@ groups = ET.fromstring(r.content)
 
 # Set up the variable to hold the bad_name_group
 # TODO: Make this better, is there a more "pythonic" way to do this
-bad_name_group = ET.Element('dummy')
+bad_name_group = None
 
 # Find the "bad names" group and make it bad_name_group
 for group in groups.findall('mobile_device_group'):
     if group.find('name').text == "bad names":
         bad_name_group = group
         break
+
+# If we didn't find the droids we were looking for, make one
+if bad_name_group == None:
+	new_root = ET.Element("mobile_device_group")
+	name = ET.Element("name")
+	name.text = "bad names"
+	new_root.append(name)
+	is_smart = ET.Element("is_smart")
+	is_smart.text = "false"
+	new_root.append(is_smart)
+	xml = ET.tostring(new_root)
+	r = requests.post(mobile_device_groups_uri + "/id/0", data=xml, auth=auth_tuple, verify=False)
+	assert_response(r,201,"creating bad names group")
+	print(r.text) # TODO: for debugging only
+	bad_name_group = ET.fromstring(r.content)
+	print("ID for new group is %s" % bad_name_group.findtext('id'))
+
 
 # Build the URI for the 'bad names' mobile device groups
 bad_names_group_uri = mobile_device_groups_uri + "/id/" + bad_name_group.find('id').text
@@ -87,6 +104,8 @@ r = requests.get(bad_names_group_uri, auth=auth_tuple, verify=False)
 assert_response(r,200,"getting the \"bad names\" mobile devide group")
 
 # Parse the xml for the 'bad names' group
+print("Text of the bad names group xml")
+print(r.text)
 bad_name_group = ET.fromstring(r.content)
 
 # Find and remove the mobile_devices object from the bad names group
@@ -106,4 +125,5 @@ xml = ET.tostring(bad_name_group)
 r = requests.put(bad_names_group_uri, data=xml, auth=auth_tuple, verify=False)
 assert_response(r,201,"updating the \"bad names\" mobile devide group")
 
-# print r.text
+print(r.text)
+
